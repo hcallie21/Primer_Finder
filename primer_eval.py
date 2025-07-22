@@ -68,11 +68,11 @@ def starts_ends_with_gc(sequence):
 def is_suitable_for_primer(sequence, min_length=18, max_length=25):
     #GC content between 40-60%
     if (
-        calculate_gc_content(sequence) < 40 or calculate_gc_content(sequence) > 60  # GC content NOT between 40-60%
+        calculate_gc_content(sequence)< 40 or calculate_gc_content(sequence) > 60  # GC content NOT between 40-60%
         or contains_dimer(sequence)  # contains dimers
         or contains_hairpin(sequence)  # contains hairpins
         or contains_self_complementarity(sequence)  # contains self-complementarity
-        or contains_repeats(sequence)  # contains repeats
+        or contains_repeats(sequence)  # contains repeats 
         or not starts_ends_with_gc(sequence)  # starts/ends with G/C
         or calculate_melting_temperature(sequence) < 50  # melting temperature < 50C
         or calculate_melting_temperature(sequence) > 68  # melting temperature > 65C
@@ -87,11 +87,13 @@ def is_suitable_for_primer(sequence, min_length=18, max_length=25):
     ## If no suitable primer is found, returns None
     ## returns the longest suitable primer found within the specified length range and its index in the sequence
 def find_suitable_primer(upstrm_seq, min_length=18, max_length=25):
+    print("calling find_suitable_primer")
     curr_best_primer = None
     curr_best_length = 0
 
     #exception handling for invalid input
     if min_length > max_length or len(upstrm_seq) < min_length:
+        print("invalid input to suitable primer")
         return None  # Invalid input
 
     #loop though the sequence to find suitable primers
@@ -101,10 +103,13 @@ def find_suitable_primer(upstrm_seq, min_length=18, max_length=25):
             if i + j <= len(upstrm_seq):
                 candidate_primer = upstrm_seq[i:i + j]
                 if is_suitable_for_primer(candidate_primer, min_length, max_length):
+                    print("Found a suitable primer 1")
                     if len(candidate_primer) > curr_best_length:
+                        print("found a suitable primer 2")
                         curr_best_primer = candidate_primer
                         curr_best_length = len(candidate_primer)
                         if curr_best_length == max_length:
+                            print("Reaching where find best primer")
                             return curr_best_primer, i  # Early exit
     if curr_best_primer is None:
         return None
