@@ -5,9 +5,9 @@ from Bio.SeqRecord import SeqRecord
 def calculate_gc_content(sequence):
     if not sequence:
         return 0.0
-    gc_count = sequence.count("G") + sequence.count("C")
+    gc_count = sequence.count('G') + sequence.count('C')
     return (gc_count / len(sequence)) * 100
-
+ 
 
 def normalize_sequence(seq):
     """Convert BioPython SeqRecord or Seq to a plain string."""
@@ -36,26 +36,6 @@ def has_self_dimer(primer, check_length=4):
     return rc_tail in primer[:-check_length]
 
 
-
-# #contains hairpin structures
-# def contains_hairpin(sequence, hairpin_length=3):
-#     """Check if the sequence contains a hairpin structure of a specified length."""
-#     for i in range(len(sequence) - hairpin_length + 1):
-#         subsequence = sequence[i:i + hairpin_length]
-#         if( str(subsequence) == str(subsequence)[::-1]): # Check if the subsequence is palindromic
-#             return True
-#     return False
-
-# #contains self-complementarity
-# def contains_self_complementarity(sequence, complement_length=4):
-#     """Check if the sequence contains self-complementarity of a specified length."""
-#     for i in range(len(sequence) - complement_length + 1):
-#         subsequence = sequence[i:i + complement_length]
-#         complement = subsequence[::-1].translate(str.maketrans("ATCG", "TAGC"))
-#         if subsequence == complement:
-#             return True
-#     return False
-
 #melting temperature
     #melting temperature from https://www.rosalind.bio/en/knowledge/what-formula-is-used-to-calculate-tm
 def calculate_melting_temperature(sequence):
@@ -81,7 +61,31 @@ def contains_repeats(sequence, repeat_length=2):
             return True
         seen.add(subsequence)
     return False
+def contains_tandem_repeats(sequence, repeat_length=2, min_repeats=2):
+    """
+    Check for tandem (consecutive) repeated subsequences.
+    e.g., 'ATATAT' with repeat_length=2 is ['AT', 'AT', 'AT']
+    """
+    for i in range(len(sequence) - repeat_length * min_repeats + 1):
+        unit = sequence[i:i+repeat_length]
+        repeat_region = sequence[i:i+repeat_length*min_repeats]
+        if repeat_region == unit * min_repeats:
+            return True
+    return False
 
+def contains_homopolymer(sequence, max_run=4):
+    """
+    Returns True if any base repeats more than max_run times consecutively.
+    """
+    count = 1
+    for i in range(1, len(sequence)):
+        if sequence[i] == sequence[i-1]:
+            count += 1
+            if count > max_run:
+                return True
+        else:
+            count = 1
+    return False
 
 #starts/ends with G/C sequence
 def starts_ends_with_gc(sequence):
@@ -95,7 +99,7 @@ def starts_ends_with_gc(sequence):
     return any(base in {'G', 'C'} for base in upstrm) or any(base in {'G', 'C'} for base in dwnstrm)
 
 #determines if a sequence is suitable for primer design
-###NOT FINDING SUITABLE PRIMERS
+
 def is_suitable_for_primer(sequence):
     """Check if a sequence meets primer suitability criteria."""
 
@@ -103,16 +107,27 @@ def is_suitable_for_primer(sequence):
 
     gc = calculate_gc_content(sequence)
     tm = calculate_melting_temperature(sequence)
-
-    if (
-        gc < 40 or gc > 60
-        or has_self_dimer(sequence)
-        or contains_repeats(sequence)
-        or not starts_ends_with_gc(sequence)
-        or tm < 45 or tm > 70
-    ):
+    if not (0 <= gc <= 100): 
+        #print(f"Rejected {sequence} due to GC content: {gc:.2f}%")
         return False
-    return True
+    elif has_self_dimer(sequence): 
+        #print("Rejected bc has dimer")
+        return False
+    elif contains_homopolymer(sequence): 
+        #print("Rejected because has homopolymer")
+        return False
+    elif contains_tandem_repeats(sequence): 
+        #print("Rejected because has tandem repeats")
+        return False
+    elif not starts_ends_with_gc(sequence):
+        #print("Rejected because doesn't start/end with gc")
+        return False
+    elif tm < 45 or tm > 70: 
+        #print("Temp not within acceptable ranges, rejected")
+        return False
+    else: 
+        return True
+  
 
     
 #returns the best suitable primer sequence
@@ -120,7 +135,7 @@ def is_suitable_for_primer(sequence):
     #min_length and max_length are the minimum and maximum lengths of the primer
     ## If no suitable primer is found, returns None
     ## returns the longest suitable primer found within the specified length range and its index in the sequence
-def find_suitable_primer(upstrm_seq, min_length=18, max_length=25):
+#def find_suitable_primer(upstrm_seq, min_length=18, max_length=25):
     print("Calling find_suitable_primer")
     curr_best_primer = None
     curr_best_length = 0
@@ -141,3 +156,28 @@ def find_suitable_primer(upstrm_seq, min_length=18, max_length=25):
                         if curr_best_length == max_length:
                             return curr_best_primer, i
     return (curr_best_primer, i) if curr_best_primer else None
+
+def find_suitable_primer(upstrm_seq, min_length=18, max_length=25):
+    print("Calling find_suitable_primer")
+    curr_best_primer = None
+    curr_best_length = 0
+    best_index = -1
+
+    if min_length > max_length or len(upstrm_seq) < min_length:
+        print("Invalid input to suitable primer")
+        return None
+
+    for i in range(len(upstrm_seq) - min_length + 1):
+        for j in range(min_length, max_length + 1):
+            if i + j <= len(upstrm_seq):
+                candidate_primer = upstrm_seq[i:i + j]
+                if is_suitable_for_primer(candidate_primer):
+                    #print(f"Found suitable primer: {candidate_primer} at index {i}")
+                    if j > curr_best_length:
+                        curr_best_primer = candidate_primer
+                        curr_best_length = j
+                        best_index = i
+                        if curr_best_length == max_length:
+                            return curr_best_primer, best_index
+
+    return (curr_best_primer, best_index) if curr_best_primer else None

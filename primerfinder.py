@@ -12,8 +12,7 @@ db_file = "./sequence.db"
 fastafile = "./sequence_chrI.fasta"
 
 #only for searching for gene name! change to other stuff later?
-# name_input = input("Enter gene name to search: ").strip()
-name_input = "swi6"
+name_input = input("Enter gene name to search: ").strip()
 
 #create a  SQL database from the GFF3 file
 gffutils.create_db(
@@ -58,32 +57,28 @@ else:
 
 #snag sequences upstream and downstream of the CDS to use for primer design
 region_length = 300  # Length of the region to consider for primer design
-upstream_candidate_region = record[output[1] - 30 -region_length: output[1] - 30] # Upstream region
+upstream_candidate_region = record[output[1] - 30 - region_length: output[1] - 30] # Upstream region
 downstream_candidate_region = record[output[2] + 30 : output[2] + 30 + region_length].reverse_complement()
 
 #find suitable primers for the upstream and downstream candidate regions
 #min_length and max_length are the minimum and maximum lengths of the primer
 up_primer_seq, down_primer_seq = None, None
 
-up_result = primer_eval.find_suitable_primer(upstream_candidate_region, min_length=18, max_length=25)
+up_result = primer_eval.find_suitable_primer(upstream_candidate_region, min_length=18, max_length=35)
 if up_result is not None:
     up_primer_seq, x = up_result
     # proceed with using the primer
 else:
     print("No suitable primer found.")
-# up_primer_seq, x = primer_eval.find_suitable_primer(
-#     upstream_candidate_region, min_length=18, max_length=25
-# )
+
 dwn_result = primer_eval.find_suitable_primer(downstream_candidate_region, min_length=18, max_length=25)
 if dwn_result is not None:
     down_primer_seq, y = dwn_result
     # proceed with using the primer
 else:
     print("No suitable primer found.")
-# down_primer_seq, y = primer_eval.find_suitable_primer(
-#     downstream_candidate_region, min_length=18, max_length=25
-# )
 
+#make found some primers
 if up_primer_seq is not None:
     print(f"Upstream Primer Sequence: {up_primer_seq} at starting index {output[1] -30-region_length + x} on the plus strand of length {len(up_primer_seq)}")
 else:

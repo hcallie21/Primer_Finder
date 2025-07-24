@@ -41,7 +41,7 @@ class TestPrimerCases(unittest.TestCase):
         self.assertAlmostEqual(primer_eval.calculate_melting_temperature(random2),38.407, 2)
     #test check repeats 
     def test_containsRepeats(self): 
-        no_repeats = "ATGCAGACT" #under 3 
+        no_repeats = "ATGCAGACT " #under 3 
         has_rep_same = "ATAGCATTTTGACTA"
         has_rep = "GGCGGCGGCGGC"
 
