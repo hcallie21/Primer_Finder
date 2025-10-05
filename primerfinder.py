@@ -71,18 +71,14 @@ if up_result is not None:
     # proceed with using the primer
 else:
     print("No suitable primer found.")
-# up_primer_seq, x = primer_eval.find_suitable_primer(
-#     upstream_candidate_region, min_length=18, max_length=25
-# )
+#
 dwn_result = primer_eval.find_suitable_primer(downstream_candidate_region, min_length=18, max_length=25)
 if dwn_result is not None:
     down_primer_seq, y = dwn_result
     # proceed with using the primer
 else:
     print("No suitable primer found.")
-# down_primer_seq, y = primer_eval.find_suitable_primer(
-#     downstream_candidate_region, min_length=18, max_length=25
-# )
+
 
 if up_primer_seq is not None:
     print(f"Upstream Primer Sequence: {up_primer_seq} at starting index {output[1] -30-region_length + x} on the plus strand of length {len(up_primer_seq)}")
